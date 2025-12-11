@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import CompilerPluginSupport
@@ -73,7 +73,6 @@ let package = Package(
       ],
       plugins: [
         .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
-        .plugin(name: "JExtractSwiftPlugin", package: "swift-java"),
         .plugin(name: "SwiftJavaPlugin", package: "swift-java"),
       ]
     ),

@@ -45,4 +45,34 @@ extension Slide: SlideNativeMethods {
 
         print("Left \(openedSlides.count)")
     }
+
+    @JavaMethod
+    func macro(_ path: String) -> [Int8] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        if let slide = openedSlides[path] {
+            let img: [UInt8] = slide.fetchMacroJPEGImage()
+            return img.withUnsafeBytes { buf in
+                Array(buf.bindMemory(to: Int8.self))
+            }
+        }
+        
+        return []
+    }
+
+    @JavaMethod
+    func label(_ path: String) -> [Int8] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        if let slide = openedSlides[path] {
+            let img: [UInt8] = slide.fetchLabelJPEGImage()
+            return img.withUnsafeBytes { buf in
+                Array(buf.bindMemory(to: Int8.self))
+            }
+        }
+        
+        return []
+    }
 }

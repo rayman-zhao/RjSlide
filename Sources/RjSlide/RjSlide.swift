@@ -37,13 +37,14 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func release(_ path: String) {
-        print("Removed \(path)")
-
         lock.lock()
         defer { lock.unlock() }
         _ = openedSlides.removeValue(forKey: path)
 
+    #if DEBUG
+        print("Removed \(path)")
         print("Left \(openedSlides.count)")
+    #endif
     }
 
     @JavaMethod
@@ -68,6 +69,22 @@ extension Slide: SlideNativeMethods {
         
         if let slide = openedSlides[path] {
             let img: [UInt8] = slide.fetchLabelJPEGImage()
+            return img.withUnsafeBytes { buf in
+                Array(buf.bindMemory(to: Int8.self))
+            }
+        }
+        
+        return []
+    }
+
+    @JavaMethod
+    func tile(_ path: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        if let slide = openedSlides[path] {
+            let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
+            let img: [UInt8] = slide.fetchTileRawImage(at: coord)
             return img.withUnsafeBytes { buf in
                 Array(buf.bindMemory(to: Int8.self))
             }

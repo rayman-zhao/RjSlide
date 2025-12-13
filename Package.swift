@@ -63,7 +63,6 @@ let package = Package(
       name: "RjSlide",
       dependencies: [
         .product(name: "JavaUtilFunction", package: "swift-java"),
-        .product(name: "JavaUtilJar", package: "swift-java"),
         .product(name: "RsSlide", package: "RsSlide"),
       ],
       swiftSettings: [

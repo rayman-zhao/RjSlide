@@ -3,15 +3,21 @@ import SwiftJava
 import JavaUtilFunction
 import RsSlide
 
-fileprivate let lock = NSLock()
-fileprivate var openedSlides: [String : RsSlide.Slide] = [:]
+// RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
+final class SlideWraper {
+    let slide: RsSlide.Slide
+
+    init(_ slide: RsSlide.Slide) {
+        self.slide = slide
+    }
+}
 
 @JavaImplementation("dev.swiftworks.ruslan.Slide")
 extension Slide: SlideNativeMethods {
     @JavaMethod
-    func create(_ path: String) -> Bool {
+    func create(_ path: String) -> Int64 {
         let trait = URL(filePath: path).slideTrait
-        guard case .isSlide(let builder) = trait, let slide = builder.makeView() else { return false }
+        guard case .isSlide(let builder) = trait, let slide = builder.makeView() else { return 0 }
 
     #if DEBUG
         print("SlideGUID: \(slide.id)")
@@ -28,32 +34,22 @@ extension Slide: SlideNativeMethods {
         }
     #endif
 
-        lock.lock()
-        defer { lock.unlock() }
-        
-        openedSlides[path] = slide
-        return true
+        let ptr = Unmanaged.passRetained(SlideWraper(slide)).toOpaque()
+        return Int64(Int(bitPattern: ptr))
     }
 
     @JavaMethod
-    func release(_ path: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        _ = openedSlides.removeValue(forKey: path)
-
-    #if DEBUG
-        print("Removed \(path)")
-        print("Left \(openedSlides.count)")
-    #endif
+    func release() {
+        if let ptr = UnsafeRawPointer(bitPattern: Int(self.pointer)) {
+            Unmanaged<SlideWraper>.fromOpaque(ptr).release()
+        }
     }
 
     @JavaMethod
-    func macro(_ path: String) -> [Int8] {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        if let slide = openedSlides[path] {
-            let img: [UInt8] = slide.fetchMacroJPEGImage()
+    func getMacro() -> [Int8] {
+        if let ptr = UnsafeRawPointer(bitPattern: Int(self.pointer)) {
+            let obj = Unmanaged<SlideWraper>.fromOpaque(ptr).takeUnretainedValue()
+            let img: [UInt8] = obj.slide.fetchMacroJPEGImage()
             return img.withUnsafeBytes { buf in
                 Array(buf.bindMemory(to: Int8.self))
             }
@@ -63,12 +59,10 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func label(_ path: String) -> [Int8] {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        if let slide = openedSlides[path] {
-            let img: [UInt8] = slide.fetchLabelJPEGImage()
+    func getLabel() -> [Int8] {
+        if let ptr = UnsafeRawPointer(bitPattern: Int(self.pointer)) {
+            let obj = Unmanaged<SlideWraper>.fromOpaque(ptr).takeUnretainedValue()
+            let img: [UInt8] = obj.slide.fetchLabelJPEGImage()
             return img.withUnsafeBytes { buf in
                 Array(buf.bindMemory(to: Int8.self))
             }
@@ -78,13 +72,11 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func tile(_ path: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        if let slide = openedSlides[path] {
+    func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
+        if let ptr = UnsafeRawPointer(bitPattern: Int(self.pointer)) {
+            let obj = Unmanaged<SlideWraper>.fromOpaque(ptr).takeUnretainedValue()
             let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
-            let img: [UInt8] = slide.fetchTileRawImage(at: coord)
+            let img: [UInt8] = obj.slide.fetchTileRawImage(at: coord)
             return img.withUnsafeBytes { buf in
                 Array(buf.bindMemory(to: Int8.self))
             }

@@ -7,10 +7,10 @@ public class Slide implements AutoCloseable {
         System.loadLibrary("RjSlide");
     }
 
-    public long pointer = 0;
+    public long nativeSlide = 0;
 
     public Slide(String path) {
-        pointer = create(path);
+        nativeSlide = create(path);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class Slide implements AutoCloseable {
 
     public static void main(String[] args) {
         try (Slide s = new Slide(args[0])) {
-            System.out.print("Open " + args[0] + " at address 0x" + Long.toHexString(s.pointer) + "\n");
+            System.out.print("Open " + args[0] + " at address 0x" + Long.toHexString(s.nativeSlide) + "\n");
 
             byte[] macro = s.getMacro();
             System.out.println("Got macro image in " + macro.length);

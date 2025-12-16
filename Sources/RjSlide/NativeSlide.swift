@@ -5,10 +5,21 @@ import RsSlide
 
 // RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
 final class SlideWrapper {
+    let lock = NSLock()
     let slide: RsSlide.Slide
 
     init(_ slide: RsSlide.Slide) {
         self.slide = slide
+    }
+
+    static func from(bits: Int64) -> Unmanaged<SlideWrapper> {
+        let ptr = UnsafeRawPointer(bitPattern: Int(bits))!
+        return Unmanaged<SlideWrapper>.fromOpaque(ptr)
+    }
+
+    static func from(bits: Int64) -> SlideWrapper {
+        let ptr = UnsafeRawPointer(bitPattern: Int(bits))!
+        return Unmanaged<SlideWrapper>.fromOpaque(ptr).takeUnretainedValue()
     }
 }
 
@@ -40,48 +51,44 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func release() {
-        if let ptr = UnsafeRawPointer(bitPattern: Int(self.nativeSlide)) {
-            Unmanaged<SlideWrapper>.fromOpaque(ptr).release()
-        }
+        let wrapper:Unmanaged<SlideWrapper> = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.release()
     }
 
     @JavaMethod
     func getMacro() -> [Int8] {
-        if let ptr = UnsafeRawPointer(bitPattern: Int(self.nativeSlide)) {
-            let obj = Unmanaged<SlideWrapper>.fromOpaque(ptr).takeUnretainedValue()
-            let img: [UInt8] = obj.slide.fetchMacroJPEGImage()
-            return img.withUnsafeBytes { buf in
-                Array(buf.bindMemory(to: Int8.self))
-            }
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.lock.lock()
+        defer { wrapper.lock.unlock() }
+
+        let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage()
+        return img.withUnsafeBytes { buf in
+            Array(buf.bindMemory(to: Int8.self))
         }
-        
-        return []
     }
 
     @JavaMethod
     func getLabel() -> [Int8] {
-        if let ptr = UnsafeRawPointer(bitPattern: Int(self.nativeSlide)) {
-            let obj = Unmanaged<SlideWrapper>.fromOpaque(ptr).takeUnretainedValue()
-            let img: [UInt8] = obj.slide.fetchLabelJPEGImage()
-            return img.withUnsafeBytes { buf in
-                Array(buf.bindMemory(to: Int8.self))
-            }
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.lock.lock()
+        defer { wrapper.lock.unlock() }
+
+        let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage()
+        return img.withUnsafeBytes { buf in
+            Array(buf.bindMemory(to: Int8.self))
         }
-        
-        return []
     }
 
     @JavaMethod
     func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
-        if let ptr = UnsafeRawPointer(bitPattern: Int(self.nativeSlide)) {
-            let obj = Unmanaged<SlideWrapper>.fromOpaque(ptr).takeUnretainedValue()
-            let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
-            let img: [UInt8] = obj.slide.fetchTileRawImage(at: coord)
-            return img.withUnsafeBytes { buf in
-                Array(buf.bindMemory(to: Int8.self))
-            }
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.lock.lock()
+        defer { wrapper.lock.unlock() }
+
+        let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
+        let img: [UInt8] = wrapper.slide.fetchTileRawImage(at: coord)
+        return img.withUnsafeBytes { buf in
+            Array(buf.bindMemory(to: Int8.self))
         }
-        
-        return []
     }
 }

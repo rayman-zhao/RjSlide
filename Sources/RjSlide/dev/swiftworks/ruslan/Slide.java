@@ -20,10 +20,10 @@ public class Slide implements AutoCloseable {
 
     private native long create(String path);
     private native void release();
-    private native byte[] getMacro();
-    private native byte[] getLabel();
-    private native byte[] getTile(String imageId, int tier, int level, int x, int y);
-    private native String getUploadSlideDTO();
+    public native byte[] getMacro();
+    public native byte[] getLabel();
+    public native byte[] getTile(String imageId, int tier, int level, int x, int y);
+    public native String getUploadSlideDTO();
 
     public static void main(String[] args) {
         try (Slide s = new Slide(args[0])) {

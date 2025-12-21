@@ -23,6 +23,7 @@ public class Slide implements AutoCloseable {
     public native byte[] getMacro();
     public native byte[] getLabel();
     public native byte[] getTile(String imageId, int tier, int level, int x, int y);
+    public native byte[] getThumbnail(int maxSize);
     public native String getUploadSlideDTO();
 
     public static void main(String[] args) {
@@ -40,6 +41,10 @@ public class Slide implements AutoCloseable {
             byte[] tile = s.getTile("f", 0, 3, 0, 0);
             System.out.println("Got tile in " + tile.length);
             //Files.write(Paths.get("tile.jpg"), tile);
+
+            byte[] thumbnail = s.getThumbnail(256);
+            System.out.println("Got thumbnail in " + thumbnail.length);
+            //Files.write(Paths.get("thumbnail.jpg"), thumbnail);
 
             System.out.println("UploadSlideDTO : " + s.getUploadSlideDTO());
 

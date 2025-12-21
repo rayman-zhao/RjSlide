@@ -78,6 +78,18 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
+    func getThumbnail(_ maxSize: Int32) -> [Int8] {
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.lock.lock()
+        defer { wrapper.lock.unlock() }
+
+        let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(with: Int(maxSize))
+        return img.withUnsafeBytes { buf in
+            Array(buf.bindMemory(to: Int8.self))
+        }
+    }
+
+    @JavaMethod
     func getUploadSlideDTO() -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted

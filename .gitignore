@@ -33,6 +33,7 @@ Package.resolved
 .vscode/
 .DS_Store
 .swiftpm/
+RjSlide.jar
 #.swiftpm/configuration/registries.json
 #.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 

@@ -29,19 +29,23 @@ extension Slide: SlideNativeMethods {
     func create(_ path: String) -> Int64 {
         let trait = URL(filePath: path).slideTrait
         guard case .isSlide(let builder) = trait, let slide = builder.makeView() else { return 0 }
-
+        
         let ptr = Unmanaged.passRetained(SlideWrapper(slide)).toOpaque()
         return Int64(Int(bitPattern: ptr))
     }
 
     @JavaMethod
     func release() {
+        guard self.nativeSlide != 0 else { return }
+
         let wrapper:Unmanaged<SlideWrapper> = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.release()
     }
 
     @JavaMethod
     func getMacro() -> [Int8] {
+        guard self.nativeSlide != 0 else { return [] }
+
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
@@ -54,6 +58,8 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getLabel() -> [Int8] {
+        guard self.nativeSlide != 0 else { return [] }
+        
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
@@ -66,6 +72,8 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
+        guard self.nativeSlide != 0 else { return [] }
+        
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
@@ -79,6 +87,8 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getThumbnail(_ maxSize: Int32) -> [Int8] {
+        guard self.nativeSlide != 0 else { return [] }
+        
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
@@ -91,6 +101,8 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getUploadSlideDTO() -> String {
+        guard self.nativeSlide != 0 else { return "" }
+        
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         encoder.dateEncodingStrategy = .iso8601

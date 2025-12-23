@@ -38,7 +38,7 @@ public class Slide implements AutoCloseable {
             System.out.println("Got label image in " + label.length);
             //Files.write(Paths.get("label.jpg"), label);
 
-            byte[] tile = s.getTile("f", 0, 3, 0, 0);
+            byte[] tile = s.getTile("f", 0, 0, 0, 0);
             System.out.println("Got tile in " + tile.length);
             //Files.write(Paths.get("tile.jpg"), tile);
 

@@ -116,6 +116,7 @@ extension Slide: SlideNativeMethods {
             tileWidth: slide.tileTrait.size.w,
             tileHeight: slide.tileTrait.size.h,
             backgroundColor: slide.tileTrait.rgbBackground,
+            layerZoom: slide.layerZoom,
             layers: slide.layerTileSize.enumerated().map { (index, size) in 
                 LayerDTO(
                     index: index,

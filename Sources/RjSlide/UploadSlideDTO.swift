@@ -16,6 +16,7 @@ struct ImageDTO: Encodable {
     let tileWidth: Int
     let tileHeight: Int
     let backgroundColor: Int
+    let layerZoom: Int
     let layers: [LayerDTO]
 }
 

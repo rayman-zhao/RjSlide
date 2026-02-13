@@ -1,0 +1,6 @@
+module CRegister [system] {
+    header "Include/d.h"
+    header "Include/rigid_register_api.h"
+    link "rigid_register"
+    export *
+}

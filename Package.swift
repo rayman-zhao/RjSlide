@@ -39,6 +39,20 @@ let javaIncludePath = "\(javaHome)/include"
   let javaPlatformIncludePath = "\(javaIncludePath)/win32)"
 #endif
 
+let OpenCVLinkerSettings: [LinkerSetting] = [
+    .unsafeFlags(["-L\(Context.packageDirectory)/opencv_x64-windows"], .when(platforms: [.windows])),
+    .linkedLibrary("ittnotify"),
+    .linkedLibrary("opencv_calib3d4120"),
+    .linkedLibrary("opencv_core4120"),
+    .linkedLibrary("opencv_features2d4120"),
+    .linkedLibrary("opencv_flann4120"),
+    .linkedLibrary("opencv_imgcodecs4120"),
+    .linkedLibrary("opencv_imgproc4120"),
+    //.linkedLibrary("libjpeg-turbo"), // Not same as the official release, so have to remove it for now.
+    // .linkedLibrary("libpng"), // Use RsPack version
+    // .linkedLibrary("zlib"), // Use RsPack version
+]
+
 let package = Package(
   name: "RjSlide",
   platforms: [
@@ -64,15 +78,22 @@ let package = Package(
       dependencies: [
         .product(name: "JavaUtilFunction", package: "swift-java"),
         .product(name: "RsSlide", package: "RsSlide"),
+        .target(name: "CRegister_x64-windows", condition: .when(platforms: [.windows])),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v5),
         .unsafeFlags(["-I\(javaIncludePath)", "-I\(javaPlatformIncludePath)"])
       ],
+      linkerSettings: [
+          .unsafeFlags(["-L\(Context.packageDirectory)/Sources/CRegister_x64-windows/Lib"], .when(platforms: [.windows])),
+      ] + OpenCVLinkerSettings,
       plugins: [
         .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
         .plugin(name: "SwiftJavaPlugin", package: "swift-java"),
       ]
+    ),
+    .systemLibrary(
+      name: "CRegister_x64-windows",
     ),
   ]
 )

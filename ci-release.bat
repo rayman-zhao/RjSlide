@@ -1,5 +1,6 @@
 REM swift build
-%JAVA_HOME%\bin\java ^
--cp .build/plugins/outputs/RjSlide/RjSlide/destination/JavaCompilerPlugin/Java ^
--Djava.library.path=.build/release ^
-"dev.swiftworks.ruslan.Slide" "C:\Users\zhaoy\Downloads\mushroom.svs"
+
+jar -cf .build/release/RjSlide.jar -C .build/plugins/outputs/rjslide/RjSlide/destination/JavaCompilerPlugin/Java/ dev/
+
+java -cp .build/release/RjSlide.jar -Djava.library.path=.build/release "dev.swiftworks.ruslan.Slide" "C:\Users\zhaoy\Downloads\mushroom.svs"
+java -cp .build/release/RjSlide.jar -Djava.library.path=.build/release "dev.swiftworks.ruslan.Register" "./TestData/HE.png" "./TestData/IHC.png" "./TestOut"

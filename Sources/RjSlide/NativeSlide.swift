@@ -50,7 +50,7 @@ extension Slide: SlideNativeMethods {
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
-        let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage()
+        guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else { return [] }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -64,7 +64,7 @@ extension Slide: SlideNativeMethods {
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
-        let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage()
+        guard let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage() else { return [] }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -79,7 +79,7 @@ extension Slide: SlideNativeMethods {
         defer { wrapper.lock.unlock() }
 
         let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
-        let img: [UInt8] = wrapper.slide.fetchTileRawImage(at: coord)
+        guard let img: [UInt8] = wrapper.slide.fetchTileImage(at: coord) else { return [] }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -93,7 +93,7 @@ extension Slide: SlideNativeMethods {
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
-        let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(with: Int(maxSize))
+        guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(with: Int(maxSize)) else { return [] }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }

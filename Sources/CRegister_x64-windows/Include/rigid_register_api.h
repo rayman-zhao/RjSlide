@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
+// RR_STATIC表示使用静态库
 #if defined(RR_STATIC)
   #define RIGID_REGISTER_API
 #else

@@ -12,7 +12,7 @@ struct ImageDTO: Encodable {
     let width: Int
     let height: Int
     let scanObjective: Double
-    let calibration:Double
+    let calibration: Double
     let tileWidth: Int
     let tileHeight: Int
     let backgroundColor: Int

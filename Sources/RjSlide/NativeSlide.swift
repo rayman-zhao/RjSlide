@@ -1,9 +1,9 @@
 import Foundation
-import SwiftJava
 import JavaUtilFunction
 import RsSlide
+import SwiftJava
 
-// RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
+/// RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
 final class SlideWrapper {
     let lock = NSLock()
     let slide: RsSlide.Slide
@@ -27,9 +27,10 @@ final class SlideWrapper {
 extension Slide: SlideNativeMethods {
     @JavaMethod
     func create(_ path: String) -> Int64 {
-        let trait = URL(filePath: path).slideTrait
-        guard case .isSlide(let builder) = trait, let slide = builder.makeView() else { return 0 }
-        
+        guard case .slide(let builder) = URL(filePath: path).slideKind,
+            let slide = builder.makeSlide()
+        else { return 0 }
+
         let ptr = Unmanaged.passRetained(SlideWrapper(slide)).toOpaque()
         return Int64(Int(bitPattern: ptr))
     }
@@ -38,7 +39,7 @@ extension Slide: SlideNativeMethods {
     func release() {
         guard self.nativeSlide != 0 else { return }
 
-        let wrapper:Unmanaged<SlideWrapper> = SlideWrapper.from(bits: self.nativeSlide)
+        let wrapper: Unmanaged<SlideWrapper> = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.release()
     }
 
@@ -59,7 +60,7 @@ extension Slide: SlideNativeMethods {
     @JavaMethod
     func getLabel() -> [Int8] {
         guard self.nativeSlide != 0 else { return [] }
-        
+
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
@@ -71,15 +72,16 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8] {
+    func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8]
+    {
         guard self.nativeSlide != 0 else { return [] }
-        
+
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
         let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
-        guard let img: [UInt8] = wrapper.slide.fetchTileImage(at: coord) else { return [] }
+        guard let img: [UInt8] = wrapper.slide.fetchTileImage(for: coord) else { return [] }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -88,12 +90,14 @@ extension Slide: SlideNativeMethods {
     @JavaMethod
     func getThumbnail(_ maxSize: Int32) -> [Int8] {
         guard self.nativeSlide != 0 else { return [] }
-        
+
         let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
-        guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(with: Int(maxSize)) else { return [] }
+        guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(maxSize: Int(maxSize)) else {
+            return []
+        }
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -102,11 +106,11 @@ extension Slide: SlideNativeMethods {
     @JavaMethod
     func getUploadSlideDTO() -> String {
         guard self.nativeSlide != 0 else { return "" }
-        
+
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         encoder.dateEncodingStrategy = .iso8601
-        
+
         let slide = SlideWrapper.from(bits: self.nativeSlide).slide
         let imgDTO = ImageDTO(
             width: slide.layerImageSize[0].w,
@@ -115,9 +119,9 @@ extension Slide: SlideNativeMethods {
             calibration: slide.scanScale,
             tileWidth: slide.tileTrait.size.w,
             tileHeight: slide.tileTrait.size.h,
-            backgroundColor: slide.tileTrait.rgbBackground,
+            backgroundColor: slide.tileTrait.backgroundColorRGB,
             layerZoom: slide.layerZoom,
-            layers: slide.layerTileSize.enumerated().map { (index, size) in 
+            layers: slide.layerTileSize.enumerated().map { (index, size) in
                 LayerDTO(
                     index: index,
                     rows: size.r,
@@ -135,13 +139,14 @@ extension Slide: SlideNativeMethods {
             createTime: slide.createTime,
             size: slide.dataSize,
             manufacturer: slide.format,
-            extend: "<ROOT><SlidePath>\(slide.mainPath)</SlidePath>\(slide.extendXMLString)</ROOT>",
+            extend: "<ROOT><SlidePath>\(slide.mainPath)</SlidePath>\(slide.extendedXML)</ROOT>",
             images: [imgDTO]
         )
 
         if let data = try? encoder.encode(slideDTO),
-            let json = String(data: data, encoding: .utf8) {
-                return json
+            let json = String(data: data, encoding: .utf8)
+        {
+            return json
         } else {
             return ""
         }

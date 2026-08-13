@@ -26,15 +26,15 @@ struct UploadSlideDTO: Encodable {
     let barcode: String
     let tierCount: Int
     let tierSpacing: Double
-    //let storage = 0
-    //let storageStatus = 1
-    //let status = 0
-    //let groupSize = 0;
+    // let storage = 0
+    // let storageStatus = 1
+    // let status = 0
+    // let groupSize = 0;
     let createTime: Date
-    //finishTime=new Date();
+    // finishTime=new Date();
     let size: Int
     let manufacturer: String
     let extend: String
-    //rois= List.of();
+    // rois= List.of();
     let images: [ImageDTO]
 }

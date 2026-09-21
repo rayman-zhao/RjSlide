@@ -1,5 +1,6 @@
 import Foundation
 import JavaUtilFunction
+import LibJPEGTurbo
 import RsFoundation
 import RsSlide
 import SwiftJava
@@ -8,6 +9,7 @@ import SwiftJava
 final class SlideWrapper {
     let lock = NSLock()
     let slide: RsSlide.Slide
+    var macroRotation: Int?
 
     init(_ slide: RsSlide.Slide) {
         self.slide = slide
@@ -52,7 +54,19 @@ extension Slide: SlideNativeMethods {
         wrapper.lock.lock()
         defer { wrapper.lock.unlock() }
 
-        guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else { return [] }
+        guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else {
+            wrapper.macroRotation = 0
+            return []
+        }
+        let (width, height) = tjDecompressHeader(img)
+        if width > 0 && height > 0 && width < height, let rotatedImg = tjRotate(img, degrees: -90) {
+            wrapper.macroRotation = -90
+            return rotatedImg.withUnsafeBytes { buf in
+                Array(buf.bindMemory(to: Int8.self))
+            }
+        }
+
+        wrapper.macroRotation = 0
         return img.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
@@ -67,7 +81,8 @@ extension Slide: SlideNativeMethods {
         defer { wrapper.lock.unlock() }
 
         guard let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage() else { return [] }
-        return img.withUnsafeBytes { buf in
+        let rotatedImg = tjRotate(img, degrees: forceMacroRotation(wrapper)) ?? img
+        return rotatedImg.withUnsafeBytes { buf in
             Array(buf.bindMemory(to: Int8.self))
         }
     }
@@ -112,7 +127,8 @@ extension Slide: SlideNativeMethods {
         encoder.outputFormatting = .prettyPrinted
         encoder.dateEncodingStrategy = .iso8601
 
-        let slide = SlideWrapper.from(bits: self.nativeSlide).slide
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        let slide = wrapper.slide
         let imgDTO = ImageDTO(
             width: slide.layerImageSize[0].w,
             height: slide.layerImageSize[0].h,
@@ -131,6 +147,13 @@ extension Slide: SlideNativeMethods {
                 )
             }
         )
+
+        let rotation = forceMacroRotation(wrapper)
+        let rotationXML = rotation != 0 ? "<item rotation=\"\(rotation)\" />" : ""
+        let extXML =
+            slide.extendedXML.isEmpty && rotationXML.isEmpty
+            ? "" : "<Motic>\(rotationXML)\(slide.extendedXML)</Motic>"
+
         let slideDTO = UploadSlideDTO(
             id: slide.id.uuidString,
             name: slide.name,
@@ -140,8 +163,7 @@ extension Slide: SlideNativeMethods {
             createTime: slide.createTime,
             size: slide.dataSize,
             manufacturer: slide.format,
-            extend:
-                "<ROOT><SlidePath>\(slide.mainPath.xmlEscaped())</SlidePath>\(slide.extendedXML)</ROOT>",
+            extend: "<ROOT><SlidePath>\(slide.mainPath.xmlEscaped())</SlidePath>\(extXML)</ROOT>",
             images: [imgDTO]
         )
 
@@ -152,5 +174,12 @@ extension Slide: SlideNativeMethods {
         } else {
             return ""
         }
+    }
+
+    func forceMacroRotation(_ wrapper: SlideWrapper) -> Int {
+        if wrapper.macroRotation == nil {
+            _ = getMacro()
+        }
+        return wrapper.macroRotation ?? 0
     }
 }

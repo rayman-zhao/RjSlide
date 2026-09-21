@@ -1,5 +1,6 @@
 import Foundation
 import JavaUtilFunction
+import RsFoundation
 import RsSlide
 import SwiftJava
 
@@ -139,7 +140,8 @@ extension Slide: SlideNativeMethods {
             createTime: slide.createTime,
             size: slide.dataSize,
             manufacturer: slide.format,
-            extend: "<ROOT><SlidePath>\(slide.mainPath)</SlidePath>\(slide.extendedXML)</ROOT>",
+            extend:
+                "<ROOT><SlidePath>\(slide.mainPath.xmlEscaped())</SlidePath>\(slide.extendedXML)</ROOT>",
             images: [imgDTO]
         )
 

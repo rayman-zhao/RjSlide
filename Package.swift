@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import CompilerPluginSupport
@@ -39,24 +39,24 @@ let javaIncludePath = "\(javaHome)/include"
   let javaPlatformIncludePath = "\(javaIncludePath)/win32)"
 #endif
 
-let OpenCVLinkerSettings: [LinkerSetting] = [
-    .unsafeFlags(["-L\(Context.packageDirectory)/opencv_x64-windows"], .when(platforms: [.windows])),
-    .linkedLibrary("ittnotify"),
-    .linkedLibrary("opencv_calib3d4120"),
-    .linkedLibrary("opencv_core4120"),
-    .linkedLibrary("opencv_features2d4120"),
-    .linkedLibrary("opencv_flann4120"),
-    .linkedLibrary("opencv_imgcodecs4120"),
-    .linkedLibrary("opencv_imgproc4120"),
-    //.linkedLibrary("libjpeg-turbo"), // Not same as the official release, so have to remove it for now.
-    // .linkedLibrary("libpng"), // Use RsPack version
-    // .linkedLibrary("zlib"), // Use RsPack version
+let openCVLinkerSettings: [LinkerSetting] = [
+  .unsafeFlags(["-L\(Context.packageDirectory)/opencv_x64-windows"], .when(platforms: [.windows])),
+  .linkedLibrary("ittnotify"),
+  .linkedLibrary("opencv_calib3d4120"),
+  .linkedLibrary("opencv_core4120"),
+  .linkedLibrary("opencv_features2d4120"),
+  .linkedLibrary("opencv_flann4120"),
+  .linkedLibrary("opencv_imgcodecs4120"),
+  .linkedLibrary("opencv_imgproc4120"),
+  // .linkedLibrary("libjpeg-turbo"), // Not same as the official release, so have to remove it for now.
+  // .linkedLibrary("libpng"), // Use RsPack version
+  // .linkedLibrary("zlib"), // Use RsPack version
 ]
 
 let package = Package(
   name: "RjSlide",
   platforms: [
-    .macOS(.v15),
+    .macOS(.v15)
   ],
 
   products: [
@@ -64,7 +64,7 @@ let package = Package(
       name: "RjSlide",
       type: .dynamic,
       targets: ["RjSlide"]
-    ),
+    )
   ],
 
   dependencies: [
@@ -82,11 +82,13 @@ let package = Package(
       ],
       swiftSettings: [
         .swiftLanguageMode(.v5),
-        .unsafeFlags(["-I\(javaIncludePath)", "-I\(javaPlatformIncludePath)"])
+        .unsafeFlags(["-I\(javaIncludePath)", "-I\(javaPlatformIncludePath)"]),
       ],
       linkerSettings: [
-          .unsafeFlags(["-L\(Context.packageDirectory)/Sources/CRegister_x64-windows/Lib"], .when(platforms: [.windows])),
-      ] + OpenCVLinkerSettings,
+        .unsafeFlags(
+          ["-L\(Context.packageDirectory)/Sources/CRegister_x64-windows/Lib"],
+          .when(platforms: [.windows]))
+      ] + openCVLinkerSettings,
       plugins: [
         .plugin(name: "JavaCompilerPlugin", package: "swift-java"),
         .plugin(name: "SwiftJavaPlugin", package: "swift-java"),

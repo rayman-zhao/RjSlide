@@ -36,6 +36,11 @@ Package.resolved
 opencv*/
 TestOut/
 *.dll
+.VSCodeCounter/
+Info.plist
+.zcode/
+*.class
+
 #.swiftpm/configuration/registries.json
 #.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 

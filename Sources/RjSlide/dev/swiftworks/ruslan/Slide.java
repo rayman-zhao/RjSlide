@@ -2,6 +2,8 @@ package dev.swiftworks.ruslan;
 
 import java.lang.ref.Cleaner;
 
+// The native side is not thread-safe; every instance method must stay
+// synchronized to serialize access through the native wrapper pointer.
 public class Slide implements AutoCloseable {
     static {
         System.loadLibrary("RjSlide");
@@ -18,7 +20,7 @@ public class Slide implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         nativeSlide = 0;
         cleanable.clean();
     }
@@ -42,11 +44,11 @@ public class Slide implements AutoCloseable {
 
     private native long create(String path);
     private static native void release(long nativeSlide);
-    public native byte[] getMacro();
-    public native byte[] getLabel();
-    public native byte[] getTile(String imageId, int tier, int level, int x, int y);
-    public native byte[] getThumbnail(int maxSize);
-    public native String getUploadSlideDTO();
+    public synchronized native byte[] getMacro();
+    public synchronized native byte[] getLabel();
+    public synchronized native byte[] getTile(String imageId, int tier, int level, int x, int y);
+    public synchronized native byte[] getThumbnail(int maxSize);
+    public synchronized native String getUploadSlideDTO();
 
     public static void main(String[] args) throws Exception {
         try (Slide s = new Slide(args[0])) {

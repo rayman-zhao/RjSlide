@@ -6,8 +6,9 @@ import RsSlide
 import SwiftJava
 
 /// RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
+/// Instances are shared with Java, which serializes access by marking the
+/// native methods synchronized; no locking is needed here.
 final class SlideWrapper {
-    let lock = NSLock()
     let slide: RsSlide.Slide
     var macroRotation: Int?
 
@@ -52,7 +53,7 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getMacro() -> [Int8] {
-        withSlide { fetchMacroLocked($0) } ?? []
+        withSlide { fetchMacro($0) } ?? []
     }
 
     @JavaMethod
@@ -90,15 +91,10 @@ extension Slide: SlideNativeMethods {
 
     private func withSlide<T>(_ body: (SlideWrapper) throws -> T) rethrows -> T? {
         guard self.nativeSlide != 0 else { return nil }
-
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
-        wrapper.lock.lock()
-        defer { wrapper.lock.unlock() }
-        return try body(wrapper)
+        return try body(SlideWrapper.from(bits: self.nativeSlide))
     }
 
-    /// The wrapper's lock must be held by the caller.
-    private func fetchMacroLocked(_ wrapper: SlideWrapper) -> [Int8] {
+    private func fetchMacro(_ wrapper: SlideWrapper) -> [Int8] {
         guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else {
             wrapper.macroRotation = 0
             return []
@@ -115,7 +111,6 @@ extension Slide: SlideNativeMethods {
         return javaBytes(rotatedImg)
     }
 
-    /// The wrapper's lock must be held by the caller.
     private func uploadSlideDTO(_ wrapper: SlideWrapper) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
@@ -166,10 +161,9 @@ extension Slide: SlideNativeMethods {
         return json
     }
 
-    /// The wrapper's lock must be held by the caller.
     private func forceMacroRotation(_ wrapper: SlideWrapper) -> Int {
         if wrapper.macroRotation == nil {
-            _ = fetchMacroLocked(wrapper)
+            _ = fetchMacro(wrapper)
         }
         return wrapper.macroRotation ?? 0
     }

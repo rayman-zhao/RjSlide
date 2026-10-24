@@ -77,8 +77,10 @@ public class Slide implements AutoCloseable {
         // Regression checks for the cleaner-based lifecycle: close() is idempotent,
         // calls after close return empty, and the cleaner releases an orphaned
         // slide on the cleaner thread without crashing.
+        // Fetching the label before the macro must not deadlock the wrapper lock.
         Slide closed = new Slide(args[0]);
         check(closed.nativeSlide != 0, "slide open failed");
+        check(closed.getLabel().length > 0, "label image empty");
         closed.close();
         closed.close();
         check(closed.getMacro().length == 0 && closed.getTile("f", 0, 0, 0, 0).length == 0,

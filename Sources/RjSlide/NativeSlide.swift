@@ -26,6 +26,10 @@ final class SlideWrapper {
     }
 }
 
+private func javaBytes(_ data: [UInt8]) -> [Int8] {
+    data.withUnsafeBytes { Array($0.bindMemory(to: Int8.self)) }
+}
+
 @JavaImplementation("dev.swiftworks.ruslan.Slide")
 extension Slide: SlideNativeMethods {
     @JavaMethod
@@ -48,86 +52,75 @@ extension Slide: SlideNativeMethods {
 
     @JavaMethod
     func getMacro() -> [Int8] {
-        guard self.nativeSlide != 0 else { return [] }
-
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
-        wrapper.lock.lock()
-        defer { wrapper.lock.unlock() }
-
-        guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else {
-            wrapper.macroRotation = 0
-            return []
-        }
-        let (width, height) = tjDecompressHeader(img)
-        if width > 0 && height > 0 && width < height, let rotatedImg = tjRotate(img, degrees: -90) {
-            wrapper.macroRotation = -90
-            return rotatedImg.withUnsafeBytes { buf in
-                Array(buf.bindMemory(to: Int8.self))
-            }
-        }
-
-        wrapper.macroRotation = 0
-        return img.withUnsafeBytes { buf in
-            Array(buf.bindMemory(to: Int8.self))
-        }
+        withSlide { fetchMacroLocked($0) } ?? []
     }
 
     @JavaMethod
     func getLabel() -> [Int8] {
-        guard self.nativeSlide != 0 else { return [] }
-
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
-        wrapper.lock.lock()
-        defer { wrapper.lock.unlock() }
-
-        guard let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage() else { return [] }
-        let rotatedImg = tjRotate(img, degrees: forceMacroRotation(wrapper)) ?? img
-        return rotatedImg.withUnsafeBytes { buf in
-            Array(buf.bindMemory(to: Int8.self))
-        }
+        withSlide { wrapper in
+            guard let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage() else { return [] }
+            let rotatedImg = tjRotate(img, degrees: forceMacroRotation(wrapper)) ?? img
+            return javaBytes(rotatedImg)
+        } ?? []
     }
 
     @JavaMethod
     func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8]
     {
-        guard self.nativeSlide != 0 else { return [] }
-
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
-        wrapper.lock.lock()
-        defer { wrapper.lock.unlock() }
-
-        let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
-        guard let img: [UInt8] = wrapper.slide.fetchTileImage(for: coord) else { return [] }
-        return img.withUnsafeBytes { buf in
-            Array(buf.bindMemory(to: Int8.self))
-        }
+        withSlide { wrapper in
+            let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
+            guard let img: [UInt8] = wrapper.slide.fetchTileImage(for: coord) else { return [] }
+            return javaBytes(img)
+        } ?? []
     }
 
     @JavaMethod
     func getThumbnail(_ maxSize: Int32) -> [Int8] {
-        guard self.nativeSlide != 0 else { return [] }
-
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
-        wrapper.lock.lock()
-        defer { wrapper.lock.unlock() }
-
-        guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(maxSize: Int(maxSize)) else {
-            return []
-        }
-        return img.withUnsafeBytes { buf in
-            Array(buf.bindMemory(to: Int8.self))
-        }
+        withSlide { wrapper in
+            guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(maxSize: Int(maxSize))
+            else { return [] }
+            return javaBytes(img)
+        } ?? []
     }
 
     @JavaMethod
     func getUploadSlideDTO() -> String {
-        guard self.nativeSlide != 0 else { return "" }
+        withSlide { uploadSlideDTO($0) } ?? ""
+    }
 
+    private func withSlide<T>(_ body: (SlideWrapper) throws -> T) rethrows -> T? {
+        guard self.nativeSlide != 0 else { return nil }
+
+        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
+        wrapper.lock.lock()
+        defer { wrapper.lock.unlock() }
+        return try body(wrapper)
+    }
+
+    /// The wrapper's lock must be held by the caller.
+    private func fetchMacroLocked(_ wrapper: SlideWrapper) -> [Int8] {
+        guard let img: [UInt8] = wrapper.slide.fetchMacroJPEGImage() else {
+            wrapper.macroRotation = 0
+            return []
+        }
+
+        let (width, height) = tjDecompressHeader(img)
+        guard width > 0, height > 0, width < height, let rotatedImg = tjRotate(img, degrees: -90)
+        else {
+            wrapper.macroRotation = 0
+            return javaBytes(img)
+        }
+
+        wrapper.macroRotation = -90
+        return javaBytes(rotatedImg)
+    }
+
+    /// The wrapper's lock must be held by the caller.
+    private func uploadSlideDTO(_ wrapper: SlideWrapper) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         encoder.dateEncodingStrategy = .iso8601
 
-        let wrapper: SlideWrapper = SlideWrapper.from(bits: self.nativeSlide)
         let slide = wrapper.slide
         let imgDTO = ImageDTO(
             width: slide.layerImageSize[0].w,
@@ -167,18 +160,16 @@ extension Slide: SlideNativeMethods {
             images: [imgDTO]
         )
 
-        if let data = try? encoder.encode(slideDTO),
+        guard let data = try? encoder.encode(slideDTO),
             let json = String(data: data, encoding: .utf8)
-        {
-            return json
-        } else {
-            return ""
-        }
+        else { return "" }
+        return json
     }
 
-    func forceMacroRotation(_ wrapper: SlideWrapper) -> Int {
+    /// The wrapper's lock must be held by the caller.
+    private func forceMacroRotation(_ wrapper: SlideWrapper) -> Int {
         if wrapper.macroRotation == nil {
-            _ = getMacro()
+            _ = fetchMacroLocked(wrapper)
         }
         return wrapper.macroRotation ?? 0
     }

@@ -81,7 +81,6 @@ let package = Package(
         .target(name: "CRegister_x64-windows", condition: .when(platforms: [.windows])),
       ],
       swiftSettings: [
-        .swiftLanguageMode(.v5),
         .unsafeFlags(["-I\(javaIncludePath)", "-I\(javaPlatformIncludePath)"]),
       ],
       linkerSettings: [

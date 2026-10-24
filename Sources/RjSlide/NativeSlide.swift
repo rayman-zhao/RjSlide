@@ -39,10 +39,10 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func release() {
-        guard self.nativeSlide != 0 else { return }
+    static func release(_ nativeSlide: Int64, environment: JNIEnvironment? = nil) {
+        guard nativeSlide != 0 else { return }
 
-        let wrapper: Unmanaged<SlideWrapper> = SlideWrapper.from(bits: self.nativeSlide)
+        let wrapper: Unmanaged<SlideWrapper> = SlideWrapper.from(bits: nativeSlide)
         wrapper.release()
     }
 

@@ -6,8 +6,8 @@ import RsSlide
 import SwiftJava
 
 /// RsSlide is a protocol, need a wrapper for Unmanaged pointer convension.
-/// Instances are shared with Java, which serializes access by marking the
-/// native methods synchronized; no locking is needed here.
+/// Instances are shared with Java, which serializes access with synchronized
+/// wrapper methods; no locking is needed here.
 final class SlideWrapper {
     let slide: RsSlide.Slide
     var macroRotation: Int?
@@ -52,12 +52,12 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func getMacro() -> [Int8] {
+    func nativeGetMacro() -> [Int8] {
         withSlide { fetchMacro($0) } ?? []
     }
 
     @JavaMethod
-    func getLabel() -> [Int8] {
+    func nativeGetLabel() -> [Int8] {
         withSlide { wrapper in
             guard let img: [UInt8] = wrapper.slide.fetchLabelJPEGImage() else { return [] }
             let rotatedImg = tjRotate(img, degrees: forceMacroRotation(wrapper)) ?? img
@@ -66,7 +66,8 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func getTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32) -> [Int8]
+    func nativeGetTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32)
+        -> [Int8]
     {
         withSlide { wrapper in
             let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
@@ -76,7 +77,7 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func getThumbnail(_ maxSize: Int32) -> [Int8] {
+    func nativeGetThumbnail(_ maxSize: Int32) -> [Int8] {
         withSlide { wrapper in
             guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(maxSize: Int(maxSize))
             else { return [] }
@@ -85,7 +86,7 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func getUploadSlideDTO() -> String {
+    func nativeGetUploadSlideDTO() -> String {
         withSlide { uploadSlideDTO($0) } ?? ""
     }
 

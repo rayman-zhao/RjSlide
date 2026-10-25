@@ -4,6 +4,9 @@ import java.lang.ref.Cleaner;
 
 // The native side is not thread-safe; every instance method must stay
 // synchronized to serialize access through the native wrapper pointer.
+// The lock sits in Java wrappers instead of on the native declarations
+// because a JIT-compiled call into a `synchronized native` method crashes
+// the JVM (Temurin 25 on Windows; the interpreted entry is fine).
 public class Slide implements AutoCloseable {
     static {
         System.loadLibrary("RjSlide");
@@ -42,13 +45,33 @@ public class Slide implements AutoCloseable {
         }
     }
 
+    public synchronized byte[] getMacro() {
+        return nativeGetMacro();
+    }
+
+    public synchronized byte[] getLabel() {
+        return nativeGetLabel();
+    }
+
+    public synchronized byte[] getTile(String imageId, int tier, int level, int x, int y) {
+        return nativeGetTile(imageId, tier, level, x, y);
+    }
+
+    public synchronized byte[] getThumbnail(int maxSize) {
+        return nativeGetThumbnail(maxSize);
+    }
+
+    public synchronized String getUploadSlideDTO() {
+        return nativeGetUploadSlideDTO();
+    }
+
     private native long create(String path);
     private static native void release(long nativeSlide);
-    public synchronized native byte[] getMacro();
-    public synchronized native byte[] getLabel();
-    public synchronized native byte[] getTile(String imageId, int tier, int level, int x, int y);
-    public synchronized native byte[] getThumbnail(int maxSize);
-    public synchronized native String getUploadSlideDTO();
+    private native byte[] nativeGetMacro();
+    private native byte[] nativeGetLabel();
+    private native byte[] nativeGetTile(String imageId, int tier, int level, int x, int y);
+    private native byte[] nativeGetThumbnail(int maxSize);
+    private native String nativeGetUploadSlideDTO();
 
     public static void main(String[] args) throws Exception {
         try (Slide s = new Slide(args[0])) {

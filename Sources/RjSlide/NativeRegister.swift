@@ -17,7 +17,7 @@ extension Register: RegisterNativeMethods {
                     moving.bindMemory(to: UInt8.self).baseAddress!, w2, h2,
                     10, &buf, buf.count, nil)
                 if res == 0 {
-                    return String(cString: buf)
+                    return String(utf8String: buf) ?? ""
                 } else {
                     return """
                         {
@@ -40,7 +40,7 @@ extension Register: RegisterNativeMethods {
                     var buf = [CChar](repeating: 0, count: 4096)
                     let res = rigid_register_run_paths(fixed, moving, 10, &buf, buf.count, out)
                     if res == 0 {
-                        return String(cString: buf)
+                        return String(utf8String: buf) ?? ""
                     } else {
                         return """
                             {

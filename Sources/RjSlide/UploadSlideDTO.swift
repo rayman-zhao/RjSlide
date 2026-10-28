@@ -24,7 +24,7 @@ struct ChannelDTO: Encodable {
     let seq: Int
     let name: String
     let color: Int
-    let homeWaveLength: Int
+    let homeWavelength: Int
 }
 
 struct UploadSlideDTO: Encodable {

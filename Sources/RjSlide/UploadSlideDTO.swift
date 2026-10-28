@@ -20,6 +20,13 @@ struct ImageDTO: Encodable {
     let layers: [LayerDTO]
 }
 
+struct ChannelDTO: Encodable {
+    let seq: Int
+    let name: String
+    let color: Int
+    let homeWaveLength: Int
+}
+
 struct UploadSlideDTO: Encodable {
     let id: String
     let name: String
@@ -37,4 +44,5 @@ struct UploadSlideDTO: Encodable {
     let extend: String
     // rois= List.of();
     let images: [ImageDTO]
+    let channels: [ChannelDTO]
 }

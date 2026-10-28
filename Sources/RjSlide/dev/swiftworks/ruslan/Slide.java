@@ -53,8 +53,8 @@ public class Slide implements AutoCloseable {
         return nativeGetLabel();
     }
 
-    public synchronized byte[] getTile(String imageId, int tier, int level, int x, int y) {
-        return nativeGetTile(imageId, tier, level, x, y);
+    public synchronized byte[] getTile(String imageId, int tier, int level, int x, int y, int channel) {
+        return nativeGetTile(imageId, tier, level, x, y, channel);
     }
 
     public synchronized byte[] getThumbnail(int maxSize) {
@@ -69,7 +69,7 @@ public class Slide implements AutoCloseable {
     private static native void release(long nativeSlide);
     private native byte[] nativeGetMacro();
     private native byte[] nativeGetLabel();
-    private native byte[] nativeGetTile(String imageId, int tier, int level, int x, int y);
+    private native byte[] nativeGetTile(String imageId, int tier, int level, int x, int y, int channel);
     private native byte[] nativeGetThumbnail(int maxSize);
     private native String nativeGetUploadSlideDTO();
 
@@ -86,7 +86,7 @@ public class Slide implements AutoCloseable {
             check(label.length > 0, "label image empty");
             System.out.println("Got label image in " + label.length);
 
-            byte[] tile = s.getTile("f", 0, 0, 0, 0);
+            byte[] tile = s.getTile("f", 0, 0, 0, 0, 0);
             check(tile.length > 0, "tile image empty");
             System.out.println("Got tile in " + tile.length);
 
@@ -108,7 +108,7 @@ public class Slide implements AutoCloseable {
         check(closed.getLabel().length > 0, "label image empty");
         closed.close();
         closed.close();
-        check(closed.getMacro().length == 0 && closed.getTile("f", 0, 0, 0, 0).length == 0,
+        check(closed.getMacro().length == 0 && closed.getTile("f", 0, 0, 0, 0, 0).length == 0,
             "use after close must return empty");
 
         Slide orphan = new Slide(args[0]);

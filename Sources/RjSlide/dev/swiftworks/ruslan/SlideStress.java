@@ -87,7 +87,7 @@ public class SlideStress {
 
             check(slide.nativeSlide == 0, "native pointer must be cleared after close");
             check(
-                slide.getMacro().length == 0 && slide.getTile("f", 0, 0, 0, 0).length == 0,
+                slide.getMacro().length == 0 && slide.getTile("f", 0, 0, 0, 0, 0).length == 0,
                 "reads after close must be empty");
         }
     }
@@ -136,8 +136,8 @@ public class SlideStress {
                     } else if (op.equals("tile")) {
                         // sweep coords may be out of range and legitimately
                         // decode to empty; the origin tile may not
-                        checkImageOrEmpty(slide.getTile("f", 0, 0, i % 3, i % 4), "tile");
-                        checkImage(slide.getTile("f", 0, 0, 0, 0), "tile");
+                        checkImageOrEmpty(slide.getTile("f", 0, 0, i % 3, i % 4, 0), "tile");
+                        checkImage(slide.getTile("f", 0, 0, 0, 0, 0), "tile");
                     } else if (op.equals("thumbnail")) {
                         checkImage(slide.getThumbnail(64), "thumbnail");
                     } else {
@@ -171,7 +171,7 @@ public class SlideStress {
                     byte[] payload;
                     String what;
                     if ((i & 1) == 0) {
-                        payload = slide.getTile("f", 0, 0, 0, 0);
+                        payload = slide.getTile("f", 0, 0, 0, 0, 0);
                         what = "tile";
                     } else {
                         payload = slide.getMacro();
@@ -218,7 +218,7 @@ public class SlideStress {
                         } else {
                             checkImage(slide.getMacro(), "macro");
                         }
-                        checkImage(slide.getTile("f", 0, 0, 0, 0), "tile");
+                        checkImage(slide.getTile("f", 0, 0, 0, 0, 0), "tile");
                         checkImage(slide.getThumbnail(64), "thumbnail");
                         checkDto(slide.getUploadSlideDTO());
                         countOp();

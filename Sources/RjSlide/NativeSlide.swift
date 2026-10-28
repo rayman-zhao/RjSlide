@@ -66,11 +66,11 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func nativeGetTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32)
+    func nativeGetTile(_ imageId: String, _ tier: Int32, _ layer: Int32, _ x: Int32, _ y: Int32, _ channel: Int32)
         -> [Int8]
     {
         withSlide { wrapper in
-            let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier))
+            let coord = TileCoordinate(layer: Int(layer), row: Int(y), col: Int(x), tier: Int(tier), channel: Int(channel))
             guard let img: [UInt8] = wrapper.slide.fetchTileImage(for: coord) else { return [] }
             return javaBytes(img)
         } ?? []
@@ -136,6 +136,9 @@ extension Slide: SlideNativeMethods {
                 )
             }
         )
+        let chDTO = slide.channelTrait.enumerated().compactMap { index, item in
+            item.name != "H&E" ? ChannelDTO(seq: index, name: item.name, color: item.pseudoColorRGB, homeWaveLength: item.wavelength) : nil
+        }
 
         let rotation = forceMacroRotation(wrapper)
         let rotationXML = rotation != 0 ? "<item rotation=\"\(rotation)\" />" : ""
@@ -153,7 +156,8 @@ extension Slide: SlideNativeMethods {
             size: slide.dataSize,
             manufacturer: slide.format,
             extend: "<ROOT><SlidePath>\(slide.mainPath.xmlEscaped())</SlidePath>\(extXML)</ROOT>",
-            images: [imgDTO]
+            images: [imgDTO],
+            channels: chDTO
         )
 
         guard let data = try? encoder.encode(slideDTO),

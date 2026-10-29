@@ -139,7 +139,7 @@ public class SlideStress {
                         checkImageOrEmpty(slide.getTile("f", 0, 0, i % 3, i % 4, 0), "tile");
                         checkImage(slide.getTile("f", 0, 0, 0, 0, 0), "tile");
                     } else if (op.equals("thumbnail")) {
-                        checkImage(slide.getThumbnail(64), "thumbnail");
+                        checkImage(slide.getThumbnail(64, 0), "thumbnail");
                     } else {
                         checkDto(slide.getUploadSlideDTO());
                     }
@@ -219,7 +219,7 @@ public class SlideStress {
                             checkImage(slide.getMacro(), "macro");
                         }
                         checkImage(slide.getTile("f", 0, 0, 0, 0, 0), "tile");
-                        checkImage(slide.getThumbnail(64), "thumbnail");
+                        checkImage(slide.getThumbnail(64, 0), "thumbnail");
                         checkDto(slide.getUploadSlideDTO());
                         countOp();
                     } finally {

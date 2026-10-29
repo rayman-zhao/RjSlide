@@ -57,8 +57,8 @@ public class Slide implements AutoCloseable {
         return nativeGetTile(imageId, tier, level, x, y, channel);
     }
 
-    public synchronized byte[] getThumbnail(int maxSize) {
-        return nativeGetThumbnail(maxSize);
+    public synchronized byte[] getThumbnail(int maxSize, int channel) {
+        return nativeGetThumbnail(maxSize, channel);
     }
 
     public synchronized String getUploadSlideDTO() {
@@ -70,7 +70,7 @@ public class Slide implements AutoCloseable {
     private native byte[] nativeGetMacro();
     private native byte[] nativeGetLabel();
     private native byte[] nativeGetTile(String imageId, int tier, int level, int x, int y, int channel);
-    private native byte[] nativeGetThumbnail(int maxSize);
+    private native byte[] nativeGetThumbnail(int maxSize, int channel);
     private native String nativeGetUploadSlideDTO();
 
     public static void main(String[] args) throws Exception {
@@ -90,7 +90,7 @@ public class Slide implements AutoCloseable {
             check(tile.length > 0, "tile image empty");
             System.out.println("Got tile in " + tile.length);
 
-            byte[] thumbnail = s.getThumbnail(256);
+            byte[] thumbnail = s.getThumbnail(256, 0);
             check(thumbnail.length > 0, "thumbnail image empty");
             System.out.println("Got thumbnail in " + thumbnail.length);
 

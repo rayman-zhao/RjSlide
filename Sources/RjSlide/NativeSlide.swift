@@ -80,9 +80,11 @@ extension Slide: SlideNativeMethods {
     }
 
     @JavaMethod
-    func nativeGetThumbnail(_ maxSize: Int32) -> [Int8] {
+    func nativeGetThumbnail(_ maxSize: Int32, _ channel: Int32) -> [Int8] {
         withSlide { wrapper in
-            guard let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(maxSize: Int(maxSize))
+            guard
+                let img: [UInt8] = wrapper.slide.fetchThumbnailJPEGImage(
+                    maxSize: Int(maxSize), channel: Int(channel))
             else { return [] }
             return javaBytes(img)
         } ?? []
